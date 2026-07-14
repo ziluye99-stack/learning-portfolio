@@ -3,8 +3,8 @@ import "./globals.css";
 import { SiteHeader } from "@/components/SiteHeader";
 
 export const metadata: Metadata = {
-  title: "个人学习作品展示站",
-  description: "记录每日学习路径、阶段进度和实战项目的个人作品展示网站。"
+  title: "成长作品站",
+  description: "展示介绍页、成长路径、里程碑和产品进展的个人作品网站。"
 };
 
 export default function RootLayout({

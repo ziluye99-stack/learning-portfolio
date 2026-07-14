@@ -9,6 +9,43 @@ export type Profile = {
   avatarUrl: string;
 };
 
+export type GrowthTask = {
+  id: string;
+  title: string;
+  status: LearningStatus;
+  learningContent: string;
+  practiceContent: string;
+  progressDelta: number;
+  linkedMilestoneId?: string | null;
+  linkedProductId?: string | null;
+  progressApplied?: boolean;
+  isPublic: boolean;
+};
+
+export type GrowthDay = {
+  id: string;
+  date: string;
+  day: string;
+  title: string;
+  summary: string;
+  status: LearningStatus;
+  progress: number;
+  tasks: GrowthTask[];
+  isPublic: boolean;
+};
+
+export type GrowthMonth = {
+  id: string;
+  yearMonth: string;
+  title: string;
+  summary: string;
+  goal: string;
+  status: LearningStatus;
+  progress: number;
+  days: GrowthDay[];
+  isPublic: boolean;
+};
+
 export type DailyLog = {
   id: string;
   date: string;
@@ -19,6 +56,18 @@ export type DailyLog = {
   learned: string;
   practice: string;
   reflection: string;
+  isPublic: boolean;
+};
+
+export type ProductProgress = {
+  id: string;
+  name: string;
+  tagline: string;
+  problem: string;
+  solution: string;
+  progress: number;
+  status: LearningStatus;
+  roadmap: string[];
   isPublic: boolean;
 };
 

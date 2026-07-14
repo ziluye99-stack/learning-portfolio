@@ -5,15 +5,20 @@ import type { Project } from "@/lib/types";
 export function ProjectCard({ project }: { project: Project }) {
   return (
     <article className="project-card">
-      {/* eslint-disable-next-line @next/next/no-img-element -- Project covers are user-provided external URLs. */}
-      <img src={project.coverUrl} alt={`${project.name} 项目封面`} loading="lazy" />
-      <div className="project-body">
+      <div className="project-cover">
         <div className="card-head">
           <div>
             <p className="eyebrow">{project.status}</p>
             <h3>{project.name}</h3>
           </div>
         </div>
+        <div className="tag-row">
+          {project.stack.slice(0, 3).map((tag) => (
+            <span key={tag}>{tag}</span>
+          ))}
+        </div>
+      </div>
+      <div className="project-body">
         <p>{project.description}</p>
         <div className="tag-row">
           {project.stack.map((tag) => (

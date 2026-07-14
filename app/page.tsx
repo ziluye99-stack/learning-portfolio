@@ -1,41 +1,91 @@
 import Link from "next/link";
-import { ArrowRight, ClipboardList } from "lucide-react";
-import { LogCard } from "@/components/LogCard";
-import { MetricGrid } from "@/components/MetricGrid";
-import { ProjectCard } from "@/components/ProjectCard";
-import { getSharedData, getSharedStats } from "@/lib/shared-data";
+import { ArrowRight, CheckCircle2, Play, Target, Workflow } from "lucide-react";
+import { getPublicData } from "@/lib/public-data";
+
+const solutionCards = [
+  {
+    title: "每天学了什么难复盘",
+    copy: "成长路径按年月、日期、任务和详情四层记录，后面回看时能直接找到学习内容和实战内容。"
+  },
+  {
+    title: "实战和产品进展脱节",
+    copy: "每个任务可以关联产品和里程碑，完成并通过后只累计一次进度，避免手动重复计算。"
+  },
+  {
+    title: "对外展示没有重点",
+    copy: "首页用宣传动效、问题说明和产品入口，把个人学习记录变成能解释价值的作品展示页。"
+  }
+];
+
+const promoSteps = ["月目标", "每日任务", "实战验证", "产品进度"];
 
 export default async function HomePage() {
-  const data = await getSharedData();
-  const profile = data.profile;
-  const logs = data.dailyLogs.filter((item) => item.isPublic);
-  const projects = data.projects.filter((item) => item.isPublic);
-  const stats = getSharedStats(data);
+  const data = await getPublicData();
+  const product = data.products.find((item) => item.isPublic) || data.products[0];
+  const milestone = data.milestones.find((item) => item.isPublic) || data.milestones[0];
 
   return (
     <main>
-      <section className="container hero">
-        <div className="hero-copy">
-          <p className="eyebrow">Daily Learning Portfolio</p>
-          <h1>{profile.name}</h1>
-          <p className="lead">{profile.summary}</p>
-          <div className="hero-actions">
-            <Link className="button primary" href="/learning">
-              <ClipboardList size={18} aria-hidden="true" />
-              查看学习路径
-            </Link>
-            <Link className="button" href="/projects">
-              查看实战项目
-              <ArrowRight size={18} aria-hidden="true" />
-            </Link>
+      <section className="section intro-hero">
+        <div className="container intro-grid">
+          <div className="hero-copy">
+            <p className="eyebrow">首页 / 介绍页</p>
+            <h1>{data.profile.title}</h1>
+            <p className="lead">{data.profile.summary}</p>
+            <div className="hero-actions">
+              <Link className="button primary" href="/growth">
+                <Play size={18} aria-hidden="true" />
+                查看成长路径
+              </Link>
+              <Link className="button" href="/product-progress">
+                产品进展
+                <ArrowRight size={18} aria-hidden="true" />
+              </Link>
+            </div>
           </div>
-        </div>
-        <div className="hero-media">
-          {/* eslint-disable-next-line @next/next/no-img-element -- Admin can use arbitrary image URLs without configuring domains. */}
-          <img src={profile.avatarUrl} alt="学习工作台" />
-          <div className="floating-panel">
-            <p className="eyebrow">当前目标</p>
-            <strong>{profile.currentGoal}</strong>
+
+          <div className="promo-stage" aria-label="产品宣传动画">
+            <div className="promo-screen">
+              <div className="promo-screen-top">
+                <span className="promo-dot" />
+                <span>{product?.name || "创业产品"}</span>
+              </div>
+              <div className="promo-canvas">
+                <div className="promo-ring" />
+                <div className="promo-core">
+                  <Workflow size={26} aria-hidden="true" />
+                  <strong>成长工作台</strong>
+                  <span>学习驱动产品</span>
+                </div>
+                <div className="promo-card promo-card-top">
+                  <strong>{product?.tagline || "把成长站做成真正可用的产品"}</strong>
+                  <span>{product?.status || "演示中"}</span>
+                </div>
+                <div className="promo-card promo-card-left">
+                  <p>学习输入</p>
+                  <strong>年月 / 日期 / 任务 / 详情</strong>
+                </div>
+                <div className="promo-card promo-card-right">
+                  <p>产品输出</p>
+                  <strong>{product?.progress ?? 0}%</strong>
+                </div>
+                <div className="promo-card promo-card-bottom">
+                  <p>里程碑</p>
+                  <strong>{milestone?.progress ?? 0}%</strong>
+                </div>
+                <div className="promo-flow" aria-hidden="true">
+                  {promoSteps.map((step) => (
+                    <span key={step}>{step}</span>
+                  ))}
+                </div>
+                <div className="promo-timeline">
+                  <span />
+                  <span />
+                  <span />
+                  <span />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -44,74 +94,65 @@ export default async function HomePage() {
         <div className="container">
           <div className="section-head">
             <div>
-              <p className="eyebrow">Progress</p>
-              <h2>学习进度概览</h2>
+              <p className="eyebrow">解决的问题</p>
+              <h2>把学习、实战和创业产品放到同一条线上</h2>
             </div>
-            <p>用记录天数、平均进度和实战项目数量看清自己的推进节奏。</p>
+            <p>首页负责讲清价值，成长路径负责拆任务，里程碑负责阶段目标，产品进展负责最终交付。</p>
           </div>
-          <MetricGrid stats={stats} />
+          <div className="value-grid">
+            {solutionCards.map((card, index) => (
+              <article className="value-card" key={card.title}>
+                <div className="value-icon">
+                  {index === 0 ? <Target size={18} aria-hidden="true" /> : <CheckCircle2 size={18} aria-hidden="true" />}
+                </div>
+                <h3>{card.title}</h3>
+                <p>{card.copy}</p>
+              </article>
+            ))}
+          </div>
         </div>
       </section>
 
       <section className="section">
         <div className="container content-grid">
-          <div>
-            <div className="section-head">
-              <div>
-                <p className="eyebrow">Recent Logs</p>
-                <h2>最近学习记录</h2>
-              </div>
-              <Link className="button" href="/learning">
-                全部记录
+          <article className="admin-panel">
+            <p className="eyebrow">当前产品</p>
+            <h2>{product?.name || "创业产品"}</h2>
+            <p>{product?.problem || "等待补充产品问题描述。"}</p>
+            <p className="summary">{product?.solution || "等待补充产品解决方案。"}</p>
+            <div className="hero-actions">
+              <Link className="button primary" href="/product-progress">
+                查看产品进展
                 <ArrowRight size={16} aria-hidden="true" />
               </Link>
+              <Link className="button" href="/milestones">
+                查看里程碑
+              </Link>
             </div>
-            <div className="log-list">
-              {logs.slice(0, 3).map((log) => (
-                <LogCard log={log} key={log.id} />
-              ))}
-            </div>
-          </div>
+          </article>
+
           <aside className="side-panel">
             <div className="focus-panel">
-              <p className="eyebrow">Focus</p>
-              <h3>当前学习重点</h3>
-              <div className="tag-row">
-                {profile.focus.map((item) => (
-                  <span key={item}>{item}</span>
-                ))}
-              </div>
+              <p className="eyebrow">最近里程碑</p>
+              <h3>{milestone?.title || "尚未设置里程碑"}</h3>
+              <p>{milestone?.description || "在里程碑页设置你的阶段目标。"}</p>
             </div>
             <div className="admin-panel">
-              <p className="eyebrow">Git Data</p>
-              <h3>共享数据</h3>
-              <p>后台保存后会更新共享 JSON，其他人访问也能看到同一份内容。</p>
-              <Link className="button" href="/admin">
-                打开后台
-                <ArrowRight size={16} aria-hidden="true" />
-              </Link>
+              <p className="eyebrow">快速入口</p>
+              <h3>继续向下看</h3>
+              <div className="tag-row">
+                <Link className="button" href="/growth">
+                  成长路径
+                </Link>
+                <Link className="button" href="/milestones">
+                  里程碑
+                </Link>
+                <Link className="button" href="/product-progress">
+                  产品进展
+                </Link>
+              </div>
             </div>
           </aside>
-        </div>
-      </section>
-
-      <section className="section alt">
-        <div className="container">
-          <div className="section-head">
-            <div>
-              <p className="eyebrow">Practice</p>
-              <h2>实战项目</h2>
-            </div>
-            <Link className="button" href="/projects">
-              项目列表
-              <ArrowRight size={16} aria-hidden="true" />
-            </Link>
-          </div>
-          <div className="project-grid">
-            {projects.slice(0, 2).map((project) => (
-              <ProjectCard project={project} key={project.id} />
-            ))}
-          </div>
         </div>
       </section>
     </main>

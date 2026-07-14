@@ -1,13 +1,23 @@
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { unstable_noStore as noStore } from "next/cache";
-import type { DailyLog, Milestone, PortfolioStats, Profile, Project, TutorialLink } from "@/lib/types";
+import type {
+  DailyLog,
+  GrowthDay,
+  GrowthMonth,
+  Milestone,
+  PortfolioStats,
+  ProductProgress,
+  Profile,
+  Project,
+  TutorialLink
+} from "@/lib/types";
 
 export type SharedPortfolioData = {
   profile: Profile;
-  dailyLogs: DailyLog[];
+  growthMonths: GrowthMonth[];
   milestones: Milestone[];
-  projects: Project[];
+  products: ProductProgress[];
   tutorials: TutorialLink[];
 };
 
@@ -47,19 +57,93 @@ async function timeoutFetch(input: string, init?: RequestInit, timeoutMs = 6000)
   }
 }
 
-function normalize(data: SharedPortfolioData): SharedPortfolioData {
+function legacyDailyLogsToGrowthMonths(dailyLogs: DailyLog[] = []): GrowthMonth[] {
+  const grouped = new Map<string, DailyLog[]>();
+  for (const log of dailyLogs) {
+    const key = log.date.slice(0, 7);
+    const items = grouped.get(key) || [];
+    items.push(log);
+    grouped.set(key, items);
+  }
+
+  return [...grouped.entries()].map(([yearMonth, logs]) => {
+    const days: GrowthDay[] = logs
+      .slice()
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .map((log) => ({
+        id: `legacy-day-${log.id}`,
+        date: log.date,
+        day: log.date.slice(8, 10),
+        title: log.title,
+        summary: log.reflection,
+        status: log.status,
+        progress: log.progress,
+        tasks: [
+          {
+            id: `legacy-task-${log.id}`,
+            title: log.title,
+            status: log.status,
+            learningContent: log.learned,
+            practiceContent: log.practice,
+            progressDelta: 1,
+            linkedMilestoneId: null,
+            linkedProductId: null,
+            progressApplied: log.status === "已完成",
+            isPublic: log.isPublic
+          }
+        ],
+        isPublic: log.isPublic
+      }));
+
+    return {
+      id: `legacy-month-${yearMonth}`,
+      yearMonth,
+      title: `${yearMonth} 月份记录`,
+      summary: "由旧版学习记录自动迁移。",
+      goal: "继续拆分为月目标、日任务和任务详情。",
+      status: "进行中",
+      progress: days.length ? Math.round(days.reduce((sum, item) => sum + item.progress, 0) / days.length) : 0,
+      days,
+      isPublic: true
+    };
+  });
+}
+
+function legacyProjectsToProducts(projects: Project[] = []): ProductProgress[] {
+  return projects.map((project, index) => ({
+    id: `legacy-product-${project.id || index}`,
+    name: project.name,
+    tagline: project.status,
+    problem: project.description,
+    solution: project.summary,
+    progress: Math.max(0, Math.min(100, project.sortOrder || 0)),
+    status: "进行中",
+    roadmap: project.stack || [],
+    isPublic: project.isPublic
+  }));
+}
+
+export function normalizeSharedData(data: Partial<SharedPortfolioData> & { dailyLogs?: DailyLog[]; projects?: Project[] }): SharedPortfolioData {
+  const growthMonths = (data.growthMonths?.length ? data.growthMonths : legacyDailyLogsToGrowthMonths(data.dailyLogs)).map(
+    (month) => ({
+      ...month,
+      days: [...(month.days || [])].sort((a, b) => a.date.localeCompare(b.date))
+    })
+  );
+  const products = data.products?.length ? data.products : legacyProjectsToProducts(data.projects);
+
   return {
-    profile: data.profile,
-    dailyLogs: [...(data.dailyLogs || [])].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
+    profile: data.profile as Profile,
+    growthMonths: [...growthMonths].sort((a, b) => b.yearMonth.localeCompare(a.yearMonth)),
     milestones: data.milestones || [],
-    projects: [...(data.projects || [])].sort((a, b) => a.sortOrder - b.sortOrder),
+    products: [...products],
     tutorials: data.tutorials || []
   };
 }
 
 async function readLocalData() {
   const raw = await readFile(localDataPath, "utf8");
-  return normalize(JSON.parse(raw) as SharedPortfolioData);
+  return normalizeSharedData(JSON.parse(raw) as Partial<SharedPortfolioData> & { dailyLogs?: DailyLog[]; projects?: Project[] });
 }
 
 async function readGithubData() {
@@ -74,7 +158,7 @@ async function readGithubData() {
 
   const payload = (await response.json()) as { content: string; encoding: string };
   const json = Buffer.from(payload.content, payload.encoding as BufferEncoding).toString("utf8");
-  return normalize(JSON.parse(json) as SharedPortfolioData);
+  return normalizeSharedData(JSON.parse(json) as Partial<SharedPortfolioData> & { dailyLogs?: DailyLog[]; projects?: Project[] });
 }
 
 export async function getSharedData() {
@@ -91,7 +175,7 @@ export async function getSharedData() {
 }
 
 export async function writeSharedData(data: SharedPortfolioData, message: string) {
-  const normalized = normalize(data);
+  const normalized = normalizeSharedData(data);
   const body = `${JSON.stringify(normalized, null, 2)}\n`;
 
   if (!githubConfigured()) {
@@ -134,18 +218,20 @@ export function createId(prefix: string) {
 }
 
 export function getSharedStats(data: SharedPortfolioData): PortfolioStats {
-  const publicLogs = data.dailyLogs.filter((item) => item.isPublic);
+  const publicMonths = data.growthMonths.filter((item) => item.isPublic);
+  const publicDays = publicMonths.flatMap((month) => month.days.filter((day) => day.isPublic));
+  const publicTasks = publicDays.flatMap((day) => day.tasks.filter((task) => task.isPublic));
   const publicMilestones = data.milestones.filter((item) => item.isPublic);
-  const publicProjects = data.projects.filter((item) => item.isPublic);
-  const averageProgress = publicLogs.length
-    ? Math.round(publicLogs.reduce((sum, item) => sum + Number(item.progress || 0), 0) / publicLogs.length)
+  const publicProducts = data.products.filter((item) => item.isPublic);
+  const averageProgress = publicDays.length
+    ? Math.round(publicDays.reduce((sum, item) => sum + Number(item.progress || 0), 0) / publicDays.length)
     : 0;
 
   return {
-    totalDays: publicLogs.length,
+    totalDays: publicDays.length,
     averageProgress,
-    finishedLogs: publicLogs.filter((item) => item.status === "已完成").length,
+    finishedLogs: publicTasks.filter((item) => item.status === "已完成").length,
     activeMilestones: publicMilestones.filter((item) => item.status !== "已完成").length,
-    projectCount: publicProjects.length
+    projectCount: publicProducts.length
   };
 }

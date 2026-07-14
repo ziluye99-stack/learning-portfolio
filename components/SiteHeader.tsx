@@ -2,15 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, BookOpen, FolderKanban, LayoutDashboard, ListChecks, LockKeyhole } from "lucide-react";
+import { House, Map, Rocket, Target } from "lucide-react";
 
 const navItems = [
-  { href: "/", label: "总览", icon: LayoutDashboard },
-  { href: "/learning", label: "学习路径", icon: ListChecks },
-  { href: "/milestones", label: "里程碑", icon: BarChart3 },
-  { href: "/projects", label: "实战项目", icon: FolderKanban },
-  { href: "/tutorials", label: "教程链接", icon: BookOpen },
-  { href: "/admin", label: "后台", icon: LockKeyhole }
+  { href: "/", label: "首页", icon: House },
+  { href: "/growth", label: "成长路径", icon: Map },
+  { href: "/milestones", label: "里程碑", icon: Target },
+  { href: "/product-progress", label: "产品进展", icon: Rocket }
 ];
 
 export function SiteHeader() {

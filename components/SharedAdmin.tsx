@@ -1,11 +1,13 @@
 import Link from "next/link";
-import { RotateCcw, Save, Trash2 } from "lucide-react";
+import { Save, Trash2 } from "lucide-react";
 import {
-  createDailyLog,
-  createMilestone,
-  createProject,
-  createTutorial,
   deleteItem,
+  upsertGrowthDayAction,
+  upsertGrowthMonthAction,
+  upsertGrowthTaskAction,
+  upsertMilestoneAction,
+  upsertProductAction,
+  upsertTutorialAction,
   updateProfile
 } from "@/app/admin/actions";
 import type { SharedPortfolioData } from "@/lib/shared-data";
@@ -20,6 +22,14 @@ export function SharedAdmin({
   deleted?: string;
 }) {
   const today = new Date().toISOString().slice(0, 10);
+  const defaultMonth = data.growthMonths[0];
+  const defaultDay = defaultMonth?.days[0];
+  const defaultTask = defaultDay?.tasks[0];
+  const product = data.products[0];
+  const milestone = data.milestones[0];
+
+  const growthDays = data.growthMonths.reduce((sum, month) => sum + month.days.length, 0);
+  const growthTasks = data.growthMonths.reduce((sum, month) => sum + month.days.reduce((daySum, day) => daySum + day.tasks.length, 0), 0);
 
   return (
     <main>
@@ -27,11 +37,14 @@ export function SharedAdmin({
         <div className="container">
           <div className="section-head">
             <div>
-              <p className="eyebrow">Git Admin</p>
-              <h1>学习记录后台</h1>
-              <p>管理员密码登录，内容写入共享 JSON。配置 GitHub 后会自动提交到仓库。</p>
+              <p className="eyebrow">Admin</p>
+              <h1>内容编辑后台</h1>
+              <p>登录后可新增月目标、日期、任务、里程碑和产品进展。</p>
             </div>
             <div className="inline-actions">
+              <Link className="button" href="/">
+                返回首页
+              </Link>
               <Link className="button" href="/admin/logout">
                 退出登录
               </Link>
@@ -44,7 +57,7 @@ export function SharedAdmin({
           <div className="admin-layout">
             <div className="admin-stack">
               <section className="admin-panel">
-                <h2>个人资料</h2>
+                <h2>首页信息</h2>
                 <form action={updateProfile} className="form-grid">
                   <div className="field">
                     <label htmlFor="profile-name">姓名/昵称</label>
@@ -67,56 +80,48 @@ export function SharedAdmin({
                     <input id="focus" name="focus" defaultValue={data.profile.focus.join(", ")} required />
                   </div>
                   <div className="field full">
-                    <label htmlFor="avatarUrl">头像/首屏图片 URL</label>
+                    <label htmlFor="avatarUrl">首屏文案图片 URL</label>
                     <input id="avatarUrl" name="avatarUrl" type="url" defaultValue={data.profile.avatarUrl} required />
                   </div>
                   <div className="field full">
                     <button className="primary" type="submit">
                       <Save size={17} aria-hidden="true" />
-                      保存资料
+                      保存首页
                     </button>
                   </div>
                 </form>
               </section>
 
               <section className="admin-panel">
-                <h2>新增每日记录</h2>
-                <form action={createDailyLog} className="form-grid">
+                <h2>新增月目标</h2>
+                <form action={upsertGrowthMonthAction} className="form-grid">
                   <div className="field">
-                    <label htmlFor="date">日期</label>
-                    <input id="date" name="date" type="date" defaultValue={today} required />
+                    <label htmlFor="yearMonth">年月</label>
+                    <input id="yearMonth" name="yearMonth" type="month" defaultValue={defaultMonth?.yearMonth || today.slice(0, 7)} required />
                   </div>
                   <div className="field">
-                    <label htmlFor="status">状态</label>
-                    <select id="status" name="status" required defaultValue="进行中">
+                    <label htmlFor="month-status">状态</label>
+                    <select id="month-status" name="status" defaultValue="准备中" required>
+                      <option value="准备中">准备中</option>
                       <option value="进行中">进行中</option>
                       <option value="已完成">已完成</option>
-                      <option value="准备中">准备中</option>
                     </select>
                   </div>
                   <div className="field full">
-                    <label htmlFor="title">标题</label>
-                    <input id="title" name="title" placeholder="例如：React 组件拆分练习" required />
+                    <label htmlFor="month-title">标题</label>
+                    <input id="month-title" name="title" placeholder="例如：成长路径重构" required />
+                  </div>
+                  <div className="field full">
+                    <label htmlFor="month-goal">大目标</label>
+                    <input id="month-goal" name="goal" placeholder="例如：完成成长路径与产品进展重构" required />
+                  </div>
+                  <div className="field full">
+                    <label htmlFor="month-summary">说明</label>
+                    <textarea id="month-summary" name="summary" required />
                   </div>
                   <div className="field">
-                    <label htmlFor="phase">阶段</label>
-                    <input id="phase" name="phase" placeholder="例如：前端基础" required />
-                  </div>
-                  <div className="field">
-                    <label htmlFor="progress">进度</label>
-                    <input id="progress" name="progress" type="number" min="0" max="100" defaultValue="50" required />
-                  </div>
-                  <div className="field full">
-                    <label htmlFor="learned">学习路径</label>
-                    <textarea id="learned" name="learned" required />
-                  </div>
-                  <div className="field full">
-                    <label htmlFor="practice">实战情况</label>
-                    <textarea id="practice" name="practice" required />
-                  </div>
-                  <div className="field full">
-                    <label htmlFor="reflection">复盘</label>
-                    <textarea id="reflection" name="reflection" required />
+                    <label htmlFor="month-progress">进度</label>
+                    <input id="month-progress" name="progress" type="number" min="0" max="100" defaultValue="0" required />
                   </div>
                   <label className="field full">
                     <span>公开展示</span>
@@ -125,7 +130,156 @@ export function SharedAdmin({
                   <div className="field full">
                     <button className="primary" type="submit">
                       <Save size={17} aria-hidden="true" />
-                      保存记录
+                      保存月目标
+                    </button>
+                  </div>
+                </form>
+              </section>
+
+              <section className="admin-panel">
+                <h2>新增日期</h2>
+                <form action={upsertGrowthDayAction} className="form-grid">
+                  <div className="field">
+                    <label htmlFor="day-yearMonth">年月</label>
+                    <input id="day-yearMonth" name="yearMonth" type="month" defaultValue={defaultMonth?.yearMonth || today.slice(0, 7)} required />
+                  </div>
+                  <div className="field">
+                    <label htmlFor="day-day">日</label>
+                    <input id="day-day" name="day" type="number" min="1" max="31" defaultValue={Number(today.slice(8, 10))} required />
+                  </div>
+                  <div className="field">
+                    <label htmlFor="day-status">状态</label>
+                    <select id="day-status" name="status" defaultValue="准备中" required>
+                      <option value="准备中">准备中</option>
+                      <option value="进行中">进行中</option>
+                      <option value="已完成">已完成</option>
+                    </select>
+                  </div>
+                  <div className="field full">
+                    <label htmlFor="day-title">标题</label>
+                    <input id="day-title" name="title" placeholder="例如：首页宣传动效" required />
+                  </div>
+                  <div className="field full">
+                    <label htmlFor="day-summary">说明</label>
+                    <textarea id="day-summary" name="summary" required />
+                  </div>
+                  <div className="field">
+                    <label htmlFor="day-progress">进度</label>
+                    <input id="day-progress" name="progress" type="number" min="0" max="100" defaultValue="0" required />
+                  </div>
+                  <label className="field full">
+                    <span>公开展示</span>
+                    <input name="isPublic" type="checkbox" defaultChecked />
+                  </label>
+                  <div className="field full">
+                    <button className="primary" type="submit">
+                      <Save size={17} aria-hidden="true" />
+                      保存日期
+                    </button>
+                  </div>
+                </form>
+              </section>
+
+              <section className="admin-panel">
+                <h2>新增任务</h2>
+                <form action={upsertGrowthTaskAction} className="form-grid">
+                  <div className="field">
+                    <label htmlFor="task-yearMonth">年月</label>
+                    <input id="task-yearMonth" name="yearMonth" type="month" defaultValue={defaultMonth?.yearMonth || today.slice(0, 7)} required />
+                  </div>
+                  <div className="field">
+                    <label htmlFor="task-day">日</label>
+                    <input id="task-day" name="day" type="number" min="1" max="31" defaultValue={Number(defaultDay?.day || today.slice(8, 10))} required />
+                  </div>
+                  <div className="field">
+                    <label htmlFor="task-status">状态</label>
+                    <select id="task-status" name="status" defaultValue="进行中" required>
+                      <option value="准备中">准备中</option>
+                      <option value="进行中">进行中</option>
+                      <option value="已完成">已完成</option>
+                    </select>
+                  </div>
+                  <div className="field">
+                    <label htmlFor="task-progressDelta">进度增量</label>
+                    <input id="task-progressDelta" name="progressDelta" type="number" min="1" max="100" defaultValue="1" required />
+                  </div>
+                  <div className="field full">
+                    <label htmlFor="task-title">标题</label>
+                    <input id="task-title" name="title" placeholder="例如：重做产品宣传动画" required />
+                  </div>
+                  <div className="field full">
+                    <label htmlFor="learningContent">学习内容</label>
+                    <textarea id="learningContent" name="learningContent" required />
+                  </div>
+                  <div className="field full">
+                    <label htmlFor="practiceContent">实战内容</label>
+                    <textarea id="practiceContent" name="practiceContent" required />
+                  </div>
+                  <div className="field">
+                    <label htmlFor="linkedMilestoneId">关联里程碑</label>
+                    <input id="linkedMilestoneId" name="linkedMilestoneId" defaultValue={milestone?.id || ""} />
+                  </div>
+                  <div className="field">
+                    <label htmlFor="linkedProductId">关联产品</label>
+                    <input id="linkedProductId" name="linkedProductId" defaultValue={product?.id || ""} />
+                  </div>
+                  <label className="field full">
+                    <span>公开展示</span>
+                    <input name="isPublic" type="checkbox" defaultChecked />
+                  </label>
+                  <div className="field full">
+                    <button className="primary" type="submit">
+                      <Save size={17} aria-hidden="true" />
+                      保存任务
+                    </button>
+                  </div>
+                </form>
+              </section>
+
+              <section className="admin-panel">
+                <h2>产品进展</h2>
+                <form action={upsertProductAction} className="form-grid">
+                  <input name="productId" type="hidden" defaultValue={product?.id || ""} />
+                  <div className="field full">
+                    <label htmlFor="product-name">名称</label>
+                    <input id="product-name" name="name" defaultValue={product?.name || ""} required />
+                  </div>
+                  <div className="field full">
+                    <label htmlFor="product-tagline">一句话</label>
+                    <input id="product-tagline" name="tagline" defaultValue={product?.tagline || ""} required />
+                  </div>
+                  <div className="field full">
+                    <label htmlFor="product-problem">要解决的问题</label>
+                    <textarea id="product-problem" name="problem" defaultValue={product?.problem || ""} required />
+                  </div>
+                  <div className="field full">
+                    <label htmlFor="product-solution">当前方案</label>
+                    <textarea id="product-solution" name="solution" defaultValue={product?.solution || ""} required />
+                  </div>
+                  <div className="field">
+                    <label htmlFor="product-status">状态</label>
+                    <select id="product-status" name="status" defaultValue={product?.status || "准备中"} required>
+                      <option value="准备中">准备中</option>
+                      <option value="进行中">进行中</option>
+                      <option value="已完成">已完成</option>
+                    </select>
+                  </div>
+                  <div className="field">
+                    <label htmlFor="product-progress">进度</label>
+                    <input id="product-progress" name="progress" type="number" min="0" max="100" defaultValue={product?.progress || 0} required />
+                  </div>
+                  <div className="field full">
+                    <label htmlFor="product-roadmap">路线图</label>
+                    <textarea id="product-roadmap" name="roadmap" defaultValue={product?.roadmap.join(", ") || ""} required />
+                  </div>
+                  <label className="field full">
+                    <span>公开展示</span>
+                    <input name="isPublic" type="checkbox" defaultChecked={product?.isPublic ?? true} />
+                  </label>
+                  <div className="field full">
+                    <button className="primary" type="submit">
+                      <Save size={17} aria-hidden="true" />
+                      保存产品
                     </button>
                   </div>
                 </form>
@@ -133,30 +287,30 @@ export function SharedAdmin({
 
               <section className="admin-panel">
                 <h2>新增里程碑</h2>
-                <form action={createMilestone} className="form-grid">
+                <form action={upsertMilestoneAction} className="form-grid">
                   <div className="field full">
                     <label htmlFor="milestone-title">标题</label>
                     <input id="milestone-title" name="title" required />
                   </div>
                   <div className="field">
-                    <label htmlFor="targetDate">目标日期</label>
-                    <input id="targetDate" name="targetDate" type="date" required />
+                    <label htmlFor="milestone-targetDate">目标日期</label>
+                    <input id="milestone-targetDate" name="targetDate" type="date" defaultValue={today} required />
                   </div>
                   <div className="field">
                     <label htmlFor="milestone-status">状态</label>
-                    <select id="milestone-status" name="status" required defaultValue="准备中">
+                    <select id="milestone-status" name="status" defaultValue="准备中" required>
                       <option value="准备中">准备中</option>
                       <option value="进行中">进行中</option>
                       <option value="已完成">已完成</option>
                     </select>
                   </div>
                   <div className="field">
-                    <label htmlFor="milestone-progress">完成度</label>
-                    <input id="milestone-progress" name="progress" type="number" min="0" max="100" defaultValue="0" />
+                    <label htmlFor="milestone-progress">进度</label>
+                    <input id="milestone-progress" name="progress" type="number" min="0" max="100" defaultValue="0" required />
                   </div>
                   <div className="field full">
-                    <label htmlFor="description">说明</label>
-                    <textarea id="description" name="description" required />
+                    <label htmlFor="milestone-description">说明</label>
+                    <textarea id="milestone-description" name="description" required />
                   </div>
                   <label className="field full">
                     <span>公开展示</span>
@@ -172,60 +326,8 @@ export function SharedAdmin({
               </section>
 
               <section className="admin-panel">
-                <h2>新增实战项目</h2>
-                <form action={createProject} className="form-grid">
-                  <div className="field full">
-                    <label htmlFor="project-name">项目名称</label>
-                    <input id="project-name" name="name" required />
-                  </div>
-                  <div className="field">
-                    <label htmlFor="project-status">状态</label>
-                    <input id="project-status" name="status" placeholder="例如：初版" required />
-                  </div>
-                  <div className="field">
-                    <label htmlFor="sortOrder">排序</label>
-                    <input id="sortOrder" name="sortOrder" type="number" defaultValue="100" />
-                  </div>
-                  <div className="field full">
-                    <label htmlFor="project-description">简介</label>
-                    <textarea id="project-description" name="description" required />
-                  </div>
-                  <div className="field full">
-                    <label htmlFor="stack">技术栈</label>
-                    <input id="stack" name="stack" placeholder="Next.js, GitHub JSON, Vercel" required />
-                  </div>
-                  <div className="field full">
-                    <label htmlFor="coverUrl">封面图片 URL</label>
-                    <input id="coverUrl" name="coverUrl" type="url" />
-                  </div>
-                  <div className="field">
-                    <label htmlFor="repoUrl">仓库链接</label>
-                    <input id="repoUrl" name="repoUrl" type="url" />
-                  </div>
-                  <div className="field">
-                    <label htmlFor="demoUrl">演示链接</label>
-                    <input id="demoUrl" name="demoUrl" />
-                  </div>
-                  <div className="field full">
-                    <label htmlFor="summary">实战总结</label>
-                    <textarea id="summary" name="summary" required />
-                  </div>
-                  <label className="field full">
-                    <span>公开展示</span>
-                    <input name="isPublic" type="checkbox" defaultChecked />
-                  </label>
-                  <div className="field full">
-                    <button className="primary" type="submit">
-                      <Save size={17} aria-hidden="true" />
-                      保存项目
-                    </button>
-                  </div>
-                </form>
-              </section>
-
-              <section className="admin-panel">
                 <h2>新增教程链接</h2>
-                <form action={createTutorial} className="form-grid">
+                <form action={upsertTutorialAction} className="form-grid">
                   <div className="field full">
                     <label htmlFor="tutorial-title">标题</label>
                     <input id="tutorial-title" name="title" placeholder="例如：React 官方文档" required />
@@ -257,32 +359,39 @@ export function SharedAdmin({
             </div>
 
             <aside className="admin-panel">
-              <h2>共享数据管理</h2>
+              <h2>数据概览</h2>
               <p className="summary">
-                当前共有：{data.dailyLogs.length} 条学习记录、{data.milestones.length} 个里程碑、
-                {data.projects.length} 个项目、{data.tutorials.length} 个教程链接。
+                当前共有 {data.growthMonths.length} 个月、{growthDays} 天、{growthTasks} 个任务、{data.milestones.length} 个里程碑、{data.products.length} 个产品、{data.tutorials.length} 个教程。
               </p>
 
-              <AdminList title="学习记录" type="dailyLogs" items={data.dailyLogs.map((item) => ({
-                id: item.id,
-                title: item.title,
-                meta: `${item.date} / ${item.phase} / ${item.progress}% / ${item.status}`
-              }))} />
-              <AdminList title="里程碑" type="milestones" items={data.milestones.map((item) => ({
-                id: item.id,
-                title: item.title,
-                meta: `${item.targetDate} / ${item.progress}% / ${item.status}`
-              }))} />
-              <AdminList title="实战项目" type="projects" items={data.projects.map((item) => ({
-                id: item.id,
-                title: item.name,
-                meta: `${item.status} / 排序 ${item.sortOrder}`
-              }))} />
-              <AdminList title="教程链接" type="tutorials" items={data.tutorials.map((item) => ({
-                id: item.id,
-                title: item.title,
-                meta: item.category
-              }))} />
+              <Tree title="成长路径" months={data.growthMonths} />
+              <SimpleList
+                title="里程碑"
+                type="milestones"
+                items={data.milestones.map((item) => ({
+                  id: item.id,
+                  title: item.title,
+                  meta: `${item.targetDate} / ${item.progress}% / ${item.status}`
+                }))}
+              />
+              <SimpleList
+                title="产品进展"
+                type="products"
+                items={data.products.map((item) => ({
+                  id: item.id,
+                  title: item.name,
+                  meta: `${item.progress}% / ${item.status}`
+                }))}
+              />
+              <SimpleList
+                title="教程链接"
+                type="tutorials"
+                items={data.tutorials.map((item) => ({
+                  id: item.id,
+                  title: item.title,
+                  meta: item.category
+                }))}
+              />
             </aside>
           </div>
         </div>
@@ -291,13 +400,95 @@ export function SharedAdmin({
   );
 }
 
-function AdminList({
+function Tree({
+  title,
+  months
+}: {
+  title: string;
+  months: SharedPortfolioData["growthMonths"];
+}) {
+  return (
+    <div className="admin-list">
+      <h3>{title}</h3>
+      {months.map((month) => (
+        <details className="admin-tree" key={month.id} open>
+          <summary>
+            <strong>{month.yearMonth}</strong>
+            <span className="summary">{month.title}</span>
+          </summary>
+          <article className="admin-log">
+            <div>
+              <strong>{month.goal}</strong>
+              <span className="summary">{month.summary}</span>
+            </div>
+            <form action={deleteItem}>
+              <input name="type" type="hidden" value="growthMonths" />
+              <input name="id" type="hidden" value={month.yearMonth} />
+              <button className="danger" type="submit">
+                <Trash2 size={16} aria-hidden="true" />
+                删除月
+              </button>
+            </form>
+          </article>
+          <div className="admin-sublist">
+            {month.days.map((day) => (
+              <details key={day.id}>
+                <summary>
+                  <strong>{day.date}</strong>
+                  <span className="summary">{day.title}</span>
+                </summary>
+                <article className="admin-log">
+                  <div>
+                    <strong>{day.summary}</strong>
+                    <span className="summary">{day.progress}% / {day.status}</span>
+                  </div>
+                  <form action={deleteItem}>
+                    <input name="type" type="hidden" value="growthDays" />
+                    <input name="yearMonth" type="hidden" value={month.yearMonth} />
+                    <input name="day" type="hidden" value={day.day} />
+                    <input name="id" type="hidden" value={day.id} />
+                    <button className="danger" type="submit">
+                      <Trash2 size={16} aria-hidden="true" />
+                      删除日
+                    </button>
+                  </form>
+                </article>
+                <div className="admin-sublist">
+                  {day.tasks.map((task) => (
+                    <article className="admin-log" key={task.id}>
+                      <div>
+                        <strong>{task.title}</strong>
+                        <span className="summary">{task.status} / {task.progressDelta}%</span>
+                      </div>
+                      <form action={deleteItem}>
+                        <input name="type" type="hidden" value="growthTasks" />
+                        <input name="yearMonth" type="hidden" value={month.yearMonth} />
+                        <input name="day" type="hidden" value={day.day} />
+                        <input name="id" type="hidden" value={task.id} />
+                        <button className="danger" type="submit">
+                          <Trash2 size={16} aria-hidden="true" />
+                          删除任务
+                        </button>
+                      </form>
+                    </article>
+                  ))}
+                </div>
+              </details>
+            ))}
+          </div>
+        </details>
+      ))}
+    </div>
+  );
+}
+
+function SimpleList({
   title,
   type,
   items
 }: {
   title: string;
-  type: "dailyLogs" | "milestones" | "projects" | "tutorials";
+  type: "milestones" | "products" | "tutorials";
   items: Array<{ id: string; title: string; meta: string }>;
 }) {
   return (

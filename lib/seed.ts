@@ -1,4 +1,14 @@
-import type { DailyLog, Milestone, Profile, Project, TutorialLink } from "@/lib/types";
+import type {
+  DailyLog,
+  GrowthDay,
+  GrowthMonth,
+  GrowthTask,
+  Milestone,
+  ProductProgress,
+  Profile,
+  Project,
+  TutorialLink
+} from "@/lib/types";
 
 export const seedProfile: Profile = {
   name: "叶子路",
@@ -125,6 +135,131 @@ export const seedTutorials: TutorialLink[] = [
     description: "查询 HTML、CSS、JavaScript 基础知识和浏览器 API。",
     url: "https://developer.mozilla.org/",
     category: "前端基础",
+    isPublic: true
+  }
+];
+
+export const seedProducts: ProductProgress[] = [
+  {
+    id: "product-startup",
+    name: "创业产品原型",
+    tagline: "把学习路径和产品迭代放到一个工作台里",
+    problem: "学习内容、阶段目标和产品进展容易分散，难以持续复盘和讲清楚价值。",
+    solution: "用一个统一的成长站把月目标、每日任务、里程碑和产品进展串起来。",
+    progress: 22,
+    status: "进行中",
+    roadmap: ["完成信息架构", "补全任务编辑", "接入反馈收集", "准备对外试用"],
+    isPublic: true
+  }
+];
+
+const july13Tasks: GrowthTask[] = [
+  {
+    id: "task-2026-07-13-structure",
+    title: "拆分首页和成长路径信息架构",
+    status: "已完成",
+    learningContent: "梳理首页、成长路径、里程碑和产品进展四个入口，明确每一页的职责边界。",
+    practiceContent: "完成导航收口和首页介绍页的初版结构，确认深层路由的进入方式。",
+    progressDelta: 2,
+    linkedMilestoneId: "ms-structure",
+    linkedProductId: "product-startup",
+    progressApplied: true,
+    isPublic: true
+  },
+  {
+    id: "task-2026-07-13-goal",
+    title: "定义月目标与任务拆解规则",
+    status: "进行中",
+    learningContent: "把月目标拆成每天任务，再把任务拆成学习内容和实战内容两个维度。",
+    practiceContent: "准备在后台增加年月、日期、任务的嵌套编辑入口。",
+    progressDelta: 1,
+    linkedMilestoneId: "ms-growth",
+    linkedProductId: "product-startup",
+    isPublic: true
+  }
+];
+
+const july14Tasks: GrowthTask[] = [
+  {
+    id: "task-2026-07-14-home",
+    title: "制作首页宣传动效",
+    status: "进行中",
+    learningContent: "用纯代码动画模拟产品演示的节奏，替代对外部视频和图片的依赖。",
+    practiceContent: "搭建首页英雄区、问题展示和产品进展入口。",
+    progressDelta: 1,
+    linkedMilestoneId: "ms-structure",
+    linkedProductId: "product-startup",
+    isPublic: true
+  },
+  {
+    id: "task-2026-07-14-growth",
+    title: "搭建成长路径多级页面",
+    status: "准备中",
+    learningContent: "准备年月 -> 日期 -> 任务 -> 详情的四层浏览路径。",
+    practiceContent: "下一步补齐列表筛选、详情页和编辑入口。",
+    progressDelta: 1,
+    linkedMilestoneId: "ms-growth",
+    linkedProductId: "product-startup",
+    isPublic: true
+  }
+];
+
+export const seedGrowthMonths: GrowthMonth[] = [
+  {
+    id: "month-2026-07",
+    yearMonth: "2026-07",
+    title: "作品站结构重构",
+    summary: "完成首页介绍页与成长路径层级，建立月目标和每日任务的展示方式。",
+    goal: "把作品站改造成可讲清产品价值的成长型门户。",
+    status: "进行中",
+    progress: 38,
+    days: [
+      {
+        id: "day-2026-07-13",
+        date: "2026-07-13",
+        day: "13",
+        title: "架构拆分",
+        summary: "确认首页、成长路径和产品进展的职责边界。",
+        status: "已完成",
+        progress: 60,
+        tasks: july13Tasks,
+        isPublic: true
+      },
+      {
+        id: "day-2026-07-14",
+        date: "2026-07-14",
+        day: "14",
+        title: "首页宣传动效",
+        summary: "用代码动画做产品介绍，减少对外链素材的依赖。",
+        status: "进行中",
+        progress: 35,
+        tasks: july14Tasks,
+        isPublic: true
+      }
+    ],
+    isPublic: true
+  },
+  {
+    id: "month-2026-08",
+    yearMonth: "2026-08",
+    title: "成长路径与产品验证",
+    summary: "继续补全任务详情编辑、进度同步和产品试用反馈。",
+    goal: "让学习和产品迭代真正形成闭环。",
+    status: "准备中",
+    progress: 10,
+    days: [
+      {
+        id: "day-2026-08-01",
+        date: "2026-08-01",
+        day: "01",
+        title: "任务编辑规划",
+        summary: "预留月目标、日任务和详情页的编辑入口。",
+        status: "准备中",
+        progress: 0,
+        tasks: [],
+        isPublic: true
+      }
+    ],
     isPublic: true
   }
 ];

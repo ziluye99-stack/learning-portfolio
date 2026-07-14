@@ -1,8 +1,8 @@
 import { ProgressBar } from "@/components/ProgressBar";
-import { getSharedData } from "@/lib/shared-data";
+import { getPublicData } from "@/lib/public-data";
 
 export default async function MilestonesPage() {
-  const data = await getSharedData();
+  const data = await getPublicData();
   const milestones = data.milestones.filter((item) => item.isPublic);
 
   return (

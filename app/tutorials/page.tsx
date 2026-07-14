@@ -1,8 +1,8 @@
 import { ArrowRight } from "lucide-react";
-import { getSharedData } from "@/lib/shared-data";
+import { getPublicData } from "@/lib/public-data";
 
 export default async function TutorialsPage() {
-  const data = await getSharedData();
+  const data = await getPublicData();
   const tutorials = data.tutorials.filter((item) => item.isPublic);
   const categories = Array.from(new Set(tutorials.map((item) => item.category)));
 

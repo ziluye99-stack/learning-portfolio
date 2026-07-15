@@ -1,4 +1,4 @@
-import type { GrowthDay, GrowthMonth, GrowthTask } from "@/lib/types";
+import type { GrowthDay, GrowthLearningLink, GrowthMonth, GrowthTask } from "@/lib/types";
 import type { SharedPortfolioData } from "@/lib/shared-data";
 
 export function sortGrowthMonths(months: GrowthMonth[]) {
@@ -29,6 +29,14 @@ export function findGrowthDay(month: GrowthMonth, day: string) {
 
 export function findGrowthTask(day: GrowthDay, taskId: string) {
   return day.tasks.find((item) => item.id === taskId) || null;
+}
+
+export function findTheoryLink(task: GrowthTask, linkId: string) {
+  return (task.theoryLinks || []).find((item) => item.id === linkId) || null;
+}
+
+export function findTheoryNote(link: GrowthLearningLink, noteId: string) {
+  return (link.notes || []).find((item) => item.id === noteId) || null;
 }
 
 export function monthLabel(yearMonth: string) {
@@ -79,4 +87,20 @@ export function taskOperationContent(task: GrowthTask) {
 
 export function taskLifeContent(task: GrowthTask) {
   return task.lifeContent || "待编辑生活安排。";
+}
+
+export function taskTheoryProgress(task: GrowthTask) {
+  return task.theoryProgress ?? (task.status === "已完成" ? 100 : task.status === "进行中" ? 60 : 0);
+}
+
+export function taskOperationProgress(task: GrowthTask) {
+  return task.operationProgress ?? (task.status === "已完成" ? 100 : task.status === "进行中" ? 50 : 0);
+}
+
+export function taskLifeProgress(task: GrowthTask) {
+  return task.lifeProgress ?? 0;
+}
+
+export function taskSectionPath(yearMonth: string, day: string, taskId: string, section: "theory" | "practice" | "life") {
+  return `/growth/${yearMonth}/${day}/${taskId}/${section}`;
 }

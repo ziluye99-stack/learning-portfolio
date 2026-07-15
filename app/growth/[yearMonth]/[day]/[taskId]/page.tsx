@@ -10,8 +10,12 @@ import {
   findGrowthTask,
   monthLabel,
   taskLifeContent,
+  taskLifeProgress,
   taskOperationContent,
-  taskTheoryContent
+  taskOperationProgress,
+  taskSectionPath,
+  taskTheoryContent,
+  taskTheoryProgress
 } from "@/lib/growth-data";
 import { ProgressBar } from "@/components/ProgressBar";
 import { upsertGrowthTaskAction } from "@/app/admin/actions";
@@ -63,18 +67,33 @@ export default async function GrowthTaskPage({
             </div>
             <ProgressBar value={task.status === "已完成" ? 100 : task.status === "进行中" ? 60 : 25} />
             <div className="task-grid">
-              <section className="task-block">
+              <Link className="task-block section-link" href={taskSectionPath(month.yearMonth, dayItem.day, task.id, "theory")}>
                 <p className="eyebrow">理论学习部分</p>
                 <p>{taskTheoryContent(task)}</p>
-              </section>
-              <section className="task-block">
+                <div className="meta-row">
+                  <span>{task.theoryLinks?.filter((item) => item.isPublic).length || 0} 个学习链接</span>
+                  <strong>{taskTheoryProgress(task)}%</strong>
+                </div>
+                <ProgressBar value={taskTheoryProgress(task)} />
+              </Link>
+              <Link className="task-block section-link" href={taskSectionPath(month.yearMonth, dayItem.day, task.id, "practice")}>
                 <p className="eyebrow">实操部分</p>
                 <p>{taskOperationContent(task)}</p>
-              </section>
-              <section className="task-block">
+                <div className="meta-row">
+                  <span>{task.practiceProjects?.filter((item) => item.isPublic).length || 0} 个项目实战</span>
+                  <strong>{taskOperationProgress(task)}%</strong>
+                </div>
+                <ProgressBar value={taskOperationProgress(task)} />
+              </Link>
+              <Link className="task-block section-link" href={taskSectionPath(month.yearMonth, dayItem.day, task.id, "life")}>
                 <p className="eyebrow">生活部分</p>
                 <p>{taskLifeContent(task)}</p>
-              </section>
+                <div className="meta-row">
+                  <span>总结 / 运动训练</span>
+                  <strong>{taskLifeProgress(task)}%</strong>
+                </div>
+                <ProgressBar value={taskLifeProgress(task)} />
+              </Link>
             </div>
           </article>
 
@@ -120,6 +139,22 @@ export default async function GrowthTaskPage({
                   <label htmlFor="task-edit-progressDelta">进度增量</label>
                   <input id="task-edit-progressDelta" name="progressDelta" type="number" min="1" max="100" defaultValue={task.progressDelta} required />
                 </div>
+                <div className="field">
+                  <label htmlFor="task-edit-theoryProgress">理论进度</label>
+                  <input id="task-edit-theoryProgress" name="theoryProgress" type="number" min="0" max="100" defaultValue={taskTheoryProgress(task)} required />
+                </div>
+                <div className="field">
+                  <label htmlFor="task-edit-operationProgress">实操进度</label>
+                  <input id="task-edit-operationProgress" name="operationProgress" type="number" min="0" max="100" defaultValue={taskOperationProgress(task)} required />
+                </div>
+                <div className="field">
+                  <label htmlFor="task-edit-lifeProgress">生活进度</label>
+                  <input id="task-edit-lifeProgress" name="lifeProgress" type="number" min="0" max="100" defaultValue={taskLifeProgress(task)} required />
+                </div>
+                <div className="field">
+                  <label htmlFor="task-edit-fitnessProgress">运动进度</label>
+                  <input id="task-edit-fitnessProgress" name="fitnessProgress" type="number" min="0" max="100" defaultValue={task.fitnessProgress ?? 0} required />
+                </div>
                 <div className="field full">
                   <label htmlFor="task-edit-theoryContent">理论学习部分</label>
                   <textarea id="task-edit-theoryContent" name="theoryContent" defaultValue={taskTheoryContent(task)} required />
@@ -131,6 +166,37 @@ export default async function GrowthTaskPage({
                 <div className="field full">
                   <label htmlFor="task-edit-lifeContent">生活部分</label>
                   <textarea id="task-edit-lifeContent" name="lifeContent" defaultValue={taskLifeContent(task)} required />
+                </div>
+                <div className="field full">
+                  <label htmlFor="task-edit-theoryLinksText">学习链接和心得笔记</label>
+                  <textarea
+                    id="task-edit-theoryLinksText"
+                    name="theoryLinksText"
+                    defaultValue={(task.theoryLinks || [])
+                      .map((link) => {
+                        const note = link.notes?.[0];
+                        return [link.title, link.url || "", link.progress, note?.title || "心得笔记", note?.content || ""].join(" | ");
+                      })
+                      .join("\n")}
+                  />
+                </div>
+                <div className="field full">
+                  <label htmlFor="task-edit-practiceProjectsText">项目实战</label>
+                  <textarea
+                    id="task-edit-practiceProjectsText"
+                    name="practiceProjectsText"
+                    defaultValue={(task.practiceProjects || [])
+                      .map((project) => [project.title, project.url || "", project.progress, project.description, project.reflection].join(" | "))
+                      .join("\n")}
+                  />
+                </div>
+                <div className="field full">
+                  <label htmlFor="task-edit-lifeSummary">每日总结</label>
+                  <textarea id="task-edit-lifeSummary" name="lifeSummary" defaultValue={task.lifeSummary || taskLifeContent(task)} />
+                </div>
+                <div className="field full">
+                  <label htmlFor="task-edit-fitnessPlan">运动训练健身</label>
+                  <textarea id="task-edit-fitnessPlan" name="fitnessPlan" defaultValue={task.fitnessPlan || ""} />
                 </div>
                 <div className="field">
                   <label htmlFor="task-edit-linkedMilestoneId">关联里程碑</label>

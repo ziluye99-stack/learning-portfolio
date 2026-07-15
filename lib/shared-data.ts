@@ -4,7 +4,10 @@ import { unstable_noStore as noStore } from "next/cache";
 import type {
   DailyLog,
   GrowthDay,
+  GrowthLearningLink,
+  GrowthLearningNote,
   GrowthMonth,
+  GrowthPracticeItem,
   GrowthTask,
   Milestone,
   PortfolioStats,
@@ -131,6 +134,17 @@ function daysInMonth(yearMonth: string) {
   return new Date(year, month, 0).getDate();
 }
 
+function clampProgress(value: number | undefined, fallback = 0) {
+  const progress = Number(value ?? fallback);
+  return Number.isFinite(progress) ? Math.max(0, Math.min(100, progress)) : fallback;
+}
+
+function statusFromProgress(progress: number): GrowthTask["status"] {
+  if (progress >= 100) return "已完成";
+  if (progress > 0) return "进行中";
+  return "准备中";
+}
+
 function monthRange(start: string, end: string) {
   const [startYear, startMonth] = start.split("-").map(Number);
   const [endYear, endMonth] = end.split("-").map(Number);
@@ -152,15 +166,26 @@ function monthRange(start: string, end: string) {
 
 function defaultTask(date: string): GrowthTask {
   const day = date.slice(8, 10);
+  const theoryContent = "待编辑理论学习内容。";
+  const operationContent = "待编辑实操内容。";
+  const lifeContent = "待编辑生活安排。";
   return {
     id: `task-${date}-plan`,
     title: `${Number(day)}日任务编辑规划`,
     status: "准备中",
-    learningContent: "待编辑理论学习内容。",
-    practiceContent: "待编辑实操内容。",
-    theoryContent: "待编辑理论学习内容。",
-    operationContent: "待编辑实操内容。",
-    lifeContent: "待编辑生活安排。",
+    learningContent: theoryContent,
+    practiceContent: operationContent,
+    theoryContent,
+    operationContent,
+    lifeContent,
+    theoryProgress: 0,
+    operationProgress: 0,
+    lifeProgress: 0,
+    fitnessProgress: 0,
+    theoryLinks: defaultTheoryLinks(theoryContent),
+    practiceProjects: defaultPracticeProjects(operationContent),
+    lifeSummary: lifeContent,
+    fitnessPlan: "待编辑运动训练和健身安排。",
     progressDelta: 1,
     linkedMilestoneId: null,
     linkedProductId: null,
@@ -169,14 +194,116 @@ function defaultTask(date: string): GrowthTask {
   };
 }
 
+function defaultTheoryLinks(content: string): GrowthLearningLink[] {
+  return [
+    {
+      id: "link-default",
+      title: "学习资料",
+      url: "",
+      description: content || "待补充学习链接和说明。",
+      progress: 0,
+      status: "准备中",
+      notes: [
+        {
+          id: "note-default",
+          title: "心得笔记",
+          summary: "记录这条学习资料下的理解、问题和复盘。",
+          content: content || "待补充心得体会。",
+          progress: 0,
+          status: "准备中",
+          isPublic: true
+        }
+      ],
+      isPublic: true
+    }
+  ];
+}
+
+function defaultPracticeProjects(content: string): GrowthPracticeItem[] {
+  return [
+    {
+      id: "practice-default",
+      title: "项目实战",
+      description: content || "待补充相关项目实战。",
+      url: null,
+      progress: 0,
+      status: "准备中",
+      reflection: "待补充实操复盘。",
+      isPublic: true
+    }
+  ];
+}
+
+function normalizeNote(note: GrowthLearningNote, index: number): GrowthLearningNote {
+  const progress = clampProgress(note.progress);
+  return {
+    id: note.id || `note-${index + 1}`,
+    title: note.title || `心得笔记 ${index + 1}`,
+    summary: note.summary || "记录理解、问题和复盘。",
+    content: note.content || "待补充心得体会。",
+    progress,
+    status: note.status || statusFromProgress(progress),
+    isPublic: note.isPublic ?? true
+  };
+}
+
+function normalizeLearningLink(link: GrowthLearningLink, fallbackContent: string, index: number): GrowthLearningLink {
+  const progress = clampProgress(link.progress);
+  const notes = (link.notes?.length ? link.notes : defaultTheoryLinks(fallbackContent)[0].notes).map(normalizeNote);
+  return {
+    id: link.id || `link-${index + 1}`,
+    title: link.title || `学习资料 ${index + 1}`,
+    url: link.url || "",
+    description: link.description || fallbackContent || "待补充学习链接和说明。",
+    progress,
+    status: link.status || statusFromProgress(progress),
+    notes,
+    isPublic: link.isPublic ?? true
+  };
+}
+
+function normalizePracticeProject(project: GrowthPracticeItem, fallbackContent: string, index: number): GrowthPracticeItem {
+  const progress = clampProgress(project.progress);
+  return {
+    id: project.id || `practice-${index + 1}`,
+    title: project.title || `项目实战 ${index + 1}`,
+    description: project.description || fallbackContent || "待补充相关项目实战。",
+    url: project.url || null,
+    progress,
+    status: project.status || statusFromProgress(progress),
+    reflection: project.reflection || "待补充实操复盘。",
+    isPublic: project.isPublic ?? true
+  };
+}
+
 function normalizeTask(task: GrowthTask): GrowthTask {
+  const theoryContent = task.theoryContent || task.learningContent || "待编辑理论学习内容。";
+  const operationContent = task.operationContent || task.practiceContent || "待编辑实操内容。";
+  const lifeContent = task.lifeContent || "待编辑生活安排。";
+  const theoryProgress = clampProgress(task.theoryProgress, task.status === "已完成" ? 100 : task.status === "进行中" ? 60 : 0);
+  const operationProgress = clampProgress(task.operationProgress, task.status === "已完成" ? 100 : task.status === "进行中" ? 50 : 0);
+  const lifeProgress = clampProgress(task.lifeProgress);
+  const fitnessProgress = clampProgress(task.fitnessProgress);
+
   return {
     ...task,
-    learningContent: task.learningContent || task.theoryContent || "待编辑理论学习内容。",
-    practiceContent: task.practiceContent || task.operationContent || "待编辑实操内容。",
-    theoryContent: task.theoryContent || task.learningContent || "待编辑理论学习内容。",
-    operationContent: task.operationContent || task.practiceContent || "待编辑实操内容。",
-    lifeContent: task.lifeContent || "待编辑生活安排。",
+    learningContent: theoryContent,
+    practiceContent: operationContent,
+    theoryContent,
+    operationContent,
+    lifeContent,
+    theoryProgress,
+    operationProgress,
+    lifeProgress,
+    fitnessProgress,
+    theoryLinks: (task.theoryLinks?.length ? task.theoryLinks : defaultTheoryLinks(theoryContent)).map((link, index) =>
+      normalizeLearningLink(link, theoryContent, index)
+    ),
+    practiceProjects: (task.practiceProjects?.length ? task.practiceProjects : defaultPracticeProjects(operationContent)).map((project, index) =>
+      normalizePracticeProject(project, operationContent, index)
+    ),
+    lifeSummary: task.lifeSummary || lifeContent,
+    fitnessPlan: task.fitnessPlan || "待编辑运动训练和健身安排。",
     progressDelta: task.progressDelta || 1,
     linkedMilestoneId: task.linkedMilestoneId || null,
     linkedProductId: task.linkedProductId || null,

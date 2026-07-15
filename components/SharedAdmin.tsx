@@ -203,6 +203,22 @@ export function SharedAdmin({
                     <label htmlFor="task-progressDelta">进度增量</label>
                     <input id="task-progressDelta" name="progressDelta" type="number" min="1" max="100" defaultValue="1" required />
                   </div>
+                  <div className="field">
+                    <label htmlFor="task-theoryProgress">理论进度</label>
+                    <input id="task-theoryProgress" name="theoryProgress" type="number" min="0" max="100" defaultValue="0" required />
+                  </div>
+                  <div className="field">
+                    <label htmlFor="task-operationProgress">实操进度</label>
+                    <input id="task-operationProgress" name="operationProgress" type="number" min="0" max="100" defaultValue="0" required />
+                  </div>
+                  <div className="field">
+                    <label htmlFor="task-lifeProgress">生活进度</label>
+                    <input id="task-lifeProgress" name="lifeProgress" type="number" min="0" max="100" defaultValue="0" required />
+                  </div>
+                  <div className="field">
+                    <label htmlFor="task-fitnessProgress">运动进度</label>
+                    <input id="task-fitnessProgress" name="fitnessProgress" type="number" min="0" max="100" defaultValue="0" required />
+                  </div>
                   <div className="field full">
                     <label htmlFor="task-title">标题</label>
                     <input id="task-title" name="title" placeholder="例如：重做产品宣传动画" required />
@@ -218,6 +234,22 @@ export function SharedAdmin({
                   <div className="field full">
                     <label htmlFor="lifeContent">生活部分</label>
                     <textarea id="lifeContent" name="lifeContent" required />
+                  </div>
+                  <div className="field full">
+                    <label htmlFor="theoryLinksText">学习链接和心得笔记</label>
+                    <textarea id="theoryLinksText" name="theoryLinksText" placeholder="链接标题 | URL | 进度 | 心得标题 | 心得内容" />
+                  </div>
+                  <div className="field full">
+                    <label htmlFor="practiceProjectsText">项目实战</label>
+                    <textarea id="practiceProjectsText" name="practiceProjectsText" placeholder="项目标题 | URL | 进度 | 项目说明 | 实操复盘" />
+                  </div>
+                  <div className="field full">
+                    <label htmlFor="lifeSummary">每日总结</label>
+                    <textarea id="lifeSummary" name="lifeSummary" />
+                  </div>
+                  <div className="field full">
+                    <label htmlFor="fitnessPlan">运动训练健身</label>
+                    <textarea id="fitnessPlan" name="fitnessPlan" />
                   </div>
                   <div className="field">
                     <label htmlFor="linkedMilestoneId">关联里程碑</label>

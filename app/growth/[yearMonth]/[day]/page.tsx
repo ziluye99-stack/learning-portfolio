@@ -13,8 +13,12 @@ import {
   monthLabel,
   sortGrowthTasks,
   taskLifeContent,
+  taskLifeProgress,
   taskOperationContent,
-  taskTheoryContent
+  taskOperationProgress,
+  taskSectionPath,
+  taskTheoryContent,
+  taskTheoryProgress
 } from "@/lib/growth-data";
 import { upsertGrowthDayAction, upsertGrowthTaskAction } from "@/app/admin/actions";
 
@@ -67,18 +71,42 @@ export default async function GrowthDayPage({
             </div>
             <ProgressBar value={dayItem.progress} />
             <div className="task-grid">
-              <section className="task-block">
+              <Link
+                className="task-block section-link"
+                href={primaryTask ? taskSectionPath(month.yearMonth, dayItem.day, primaryTask.id, "theory") : `/growth/${month.yearMonth}/${dayItem.day}`}
+              >
                 <p className="eyebrow">理论学习部分</p>
                 <p>{primaryTask ? taskTheoryContent(primaryTask) : "待编辑理论学习内容。"}</p>
-              </section>
-              <section className="task-block">
+                <div className="meta-row">
+                  <span>{primaryTask?.theoryLinks?.filter((item) => item.isPublic).length || 0} 个学习链接</span>
+                  <strong>{primaryTask ? taskTheoryProgress(primaryTask) : 0}%</strong>
+                </div>
+                <ProgressBar value={primaryTask ? taskTheoryProgress(primaryTask) : 0} />
+              </Link>
+              <Link
+                className="task-block section-link"
+                href={primaryTask ? taskSectionPath(month.yearMonth, dayItem.day, primaryTask.id, "practice") : `/growth/${month.yearMonth}/${dayItem.day}`}
+              >
                 <p className="eyebrow">实操部分</p>
                 <p>{primaryTask ? taskOperationContent(primaryTask) : "待编辑实操内容。"}</p>
-              </section>
-              <section className="task-block">
+                <div className="meta-row">
+                  <span>{primaryTask?.practiceProjects?.filter((item) => item.isPublic).length || 0} 个项目实战</span>
+                  <strong>{primaryTask ? taskOperationProgress(primaryTask) : 0}%</strong>
+                </div>
+                <ProgressBar value={primaryTask ? taskOperationProgress(primaryTask) : 0} />
+              </Link>
+              <Link
+                className="task-block section-link"
+                href={primaryTask ? taskSectionPath(month.yearMonth, dayItem.day, primaryTask.id, "life") : `/growth/${month.yearMonth}/${dayItem.day}`}
+              >
                 <p className="eyebrow">生活部分</p>
                 <p>{primaryTask ? taskLifeContent(primaryTask) : "待编辑生活安排。"}</p>
-              </section>
+                <div className="meta-row">
+                  <span>总结 / 运动训练</span>
+                  <strong>{primaryTask ? taskLifeProgress(primaryTask) : 0}%</strong>
+                </div>
+                <ProgressBar value={primaryTask ? taskLifeProgress(primaryTask) : 0} />
+              </Link>
             </div>
           </article>
 
@@ -147,6 +175,22 @@ export default async function GrowthDayPage({
                   <label htmlFor="task-progressDelta">进度增量</label>
                   <input id="task-progressDelta" name="progressDelta" type="number" min="1" max="100" defaultValue="1" required />
                 </div>
+                <div className="field">
+                  <label htmlFor="task-theoryProgress">理论进度</label>
+                  <input id="task-theoryProgress" name="theoryProgress" type="number" min="0" max="100" defaultValue="0" required />
+                </div>
+                <div className="field">
+                  <label htmlFor="task-operationProgress">实操进度</label>
+                  <input id="task-operationProgress" name="operationProgress" type="number" min="0" max="100" defaultValue="0" required />
+                </div>
+                <div className="field">
+                  <label htmlFor="task-lifeProgress">生活进度</label>
+                  <input id="task-lifeProgress" name="lifeProgress" type="number" min="0" max="100" defaultValue="0" required />
+                </div>
+                <div className="field">
+                  <label htmlFor="task-fitnessProgress">运动进度</label>
+                  <input id="task-fitnessProgress" name="fitnessProgress" type="number" min="0" max="100" defaultValue="0" required />
+                </div>
                 <div className="field full">
                   <label htmlFor="theoryContent">理论学习部分</label>
                   <textarea id="theoryContent" name="theoryContent" required />
@@ -158,6 +202,22 @@ export default async function GrowthDayPage({
                 <div className="field full">
                   <label htmlFor="lifeContent">生活部分</label>
                   <textarea id="lifeContent" name="lifeContent" required />
+                </div>
+                <div className="field full">
+                  <label htmlFor="theoryLinksText">学习链接和心得笔记</label>
+                  <textarea id="theoryLinksText" name="theoryLinksText" placeholder="链接标题 | URL | 进度 | 心得标题 | 心得内容" />
+                </div>
+                <div className="field full">
+                  <label htmlFor="practiceProjectsText">项目实战</label>
+                  <textarea id="practiceProjectsText" name="practiceProjectsText" placeholder="项目标题 | URL | 进度 | 项目说明 | 实操复盘" />
+                </div>
+                <div className="field full">
+                  <label htmlFor="lifeSummary">每日总结</label>
+                  <textarea id="lifeSummary" name="lifeSummary" />
+                </div>
+                <div className="field full">
+                  <label htmlFor="fitnessPlan">运动训练健身</label>
+                  <textarea id="fitnessPlan" name="fitnessPlan" />
                 </div>
                 <div className="field">
                   <label htmlFor="linkedMilestoneId">关联里程碑</label>

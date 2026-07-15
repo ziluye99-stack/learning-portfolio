@@ -45,6 +45,10 @@ async function main() {
   const monthPath = `/growth/${month.yearMonth}`;
   const dayPath = `${monthPath}/${day.day}`;
   const taskPath = `${dayPath}/${task.id}`;
+  const theoryLink = task.theoryLinks?.[0];
+  const theoryNote = theoryLink?.notes?.[0];
+  const linkId = theoryLink?.id || "link-default";
+  const noteId = theoryNote?.id || "note-default";
 
   const browser = await chromium.launch({
     executablePath,
@@ -61,6 +65,11 @@ async function main() {
       [monthPath, month.title],
       [dayPath, day.title],
       [taskPath, task.title],
+      [`${taskPath}/theory`, "理论学习部分"],
+      [`${taskPath}/theory/${linkId}`, theoryLink?.title || "学习资料"],
+      [`${taskPath}/theory/${linkId}/${noteId}`, "心得笔记"],
+      [`${taskPath}/practice`, "实操部分"],
+      [`${taskPath}/life`, "生活部分"],
       ["/milestones", "里程碑"],
       ["/product-progress", "产品进展"],
       ["/tutorials", "教程链接"]

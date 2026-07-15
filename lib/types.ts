@@ -9,6 +9,38 @@ export type Profile = {
   avatarUrl: string;
 };
 
+export type GrowthLearningNote = {
+  id: string;
+  title: string;
+  summary: string;
+  content: string;
+  progress: number;
+  status: LearningStatus;
+  isPublic: boolean;
+};
+
+export type GrowthLearningLink = {
+  id: string;
+  title: string;
+  url: string;
+  description: string;
+  progress: number;
+  status: LearningStatus;
+  notes: GrowthLearningNote[];
+  isPublic: boolean;
+};
+
+export type GrowthPracticeItem = {
+  id: string;
+  title: string;
+  description: string;
+  url?: string | null;
+  progress: number;
+  status: LearningStatus;
+  reflection: string;
+  isPublic: boolean;
+};
+
 export type GrowthTask = {
   id: string;
   title: string;
@@ -18,6 +50,14 @@ export type GrowthTask = {
   theoryContent?: string;
   operationContent?: string;
   lifeContent?: string;
+  theoryProgress?: number;
+  operationProgress?: number;
+  lifeProgress?: number;
+  fitnessProgress?: number;
+  theoryLinks?: GrowthLearningLink[];
+  practiceProjects?: GrowthPracticeItem[];
+  lifeSummary?: string;
+  fitnessPlan?: string;
   progressDelta: number;
   linkedMilestoneId?: string | null;
   linkedProductId?: string | null;

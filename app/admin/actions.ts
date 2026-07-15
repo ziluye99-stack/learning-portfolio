@@ -3,7 +3,17 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createId, getSharedData, writeSharedData } from "@/lib/shared-data";
-import type { GrowthDay, GrowthMonth, GrowthTask, LearningStatus, Milestone, ProductProgress, TutorialLink } from "@/lib/types";
+import type {
+  GrowthDay,
+  GrowthLearningLink,
+  GrowthMonth,
+  GrowthPracticeItem,
+  GrowthTask,
+  LearningStatus,
+  Milestone,
+  ProductProgress,
+  TutorialLink
+} from "@/lib/types";
 
 function text(formData: FormData, key: string) {
   return String(formData.get(key) || "").trim();
@@ -35,6 +45,116 @@ function buildDate(yearMonth: string, day: string) {
 
 function clampProgress(value: number) {
   return Math.max(0, Math.min(100, value));
+}
+
+function statusFromProgress(progress: number): LearningStatus {
+  if (progress >= 100) return "已完成";
+  if (progress > 0) return "进行中";
+  return "准备中";
+}
+
+function stableId(prefix: string, value: string, index: number) {
+  const slug = value
+    .toLowerCase()
+    .replace(/https?:\/\//g, "")
+    .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 36);
+  return `${prefix}-${slug || index + 1}`;
+}
+
+function splitRows(value: string) {
+  return value
+    .split(/\n/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function parseTheoryLinks(value: string, fallbackContent: string): GrowthLearningLink[] {
+  const lines = splitRows(value);
+  if (!lines.length) {
+    return [
+      {
+        id: "link-default",
+        title: "学习资料",
+        url: "",
+        description: fallbackContent,
+        progress: 0,
+        status: "准备中",
+        notes: [
+          {
+            id: "note-default",
+            title: "心得笔记",
+            summary: "记录这条学习资料下的理解、问题和复盘。",
+            content: fallbackContent,
+            progress: 0,
+            status: "准备中",
+            isPublic: true
+          }
+        ],
+        isPublic: true
+      }
+    ];
+  }
+
+  return lines.map((line, index) => {
+    const [title, url = "", progressText = "0", noteTitle = "心得笔记", noteContent = ""] = line.split("|").map((item) => item.trim());
+    const progress = clampProgress(Number(progressText) || 0);
+    const noteProgress = progress;
+    return {
+      id: stableId("link", title || url, index),
+      title: title || `学习资料 ${index + 1}`,
+      url,
+      description: fallbackContent,
+      progress,
+      status: statusFromProgress(progress),
+      notes: [
+        {
+          id: stableId("note", noteTitle || title, index),
+          title: noteTitle || "心得笔记",
+          summary: "记录这条学习资料下的理解、问题和复盘。",
+          content: noteContent || fallbackContent,
+          progress: noteProgress,
+          status: statusFromProgress(noteProgress),
+          isPublic: true
+        }
+      ],
+      isPublic: true
+    };
+  });
+}
+
+function parsePracticeProjects(value: string, fallbackContent: string): GrowthPracticeItem[] {
+  const lines = splitRows(value);
+  if (!lines.length) {
+    return [
+      {
+        id: "practice-default",
+        title: "项目实战",
+        description: fallbackContent,
+        url: null,
+        progress: 0,
+        status: "准备中",
+        reflection: "待补充实操复盘。",
+        isPublic: true
+      }
+    ];
+  }
+
+  return lines.map((line, index) => {
+    const [title, url = "", progressText = "0", description = "", reflection = ""] = line.split("|").map((item) => item.trim());
+    const progress = clampProgress(Number(progressText) || 0);
+    return {
+      id: stableId("practice", title || url, index),
+      title: title || `项目实战 ${index + 1}`,
+      description: description || fallbackContent,
+      url: url || null,
+      progress,
+      status: statusFromProgress(progress),
+      reflection: reflection || "待补充实操复盘。",
+      isPublic: true
+    };
+  });
 }
 
 function monthDraft(formData: FormData): GrowthMonth {
@@ -71,6 +191,10 @@ function taskDraft(formData: FormData): GrowthTask {
   const theoryContent = text(formData, "theoryContent") || text(formData, "learningContent");
   const operationContent = text(formData, "operationContent") || text(formData, "practiceContent");
   const lifeContent = text(formData, "lifeContent");
+  const theoryProgress = numberValue(formData, "theoryProgress", 0);
+  const operationProgress = numberValue(formData, "operationProgress", 0);
+  const lifeProgress = numberValue(formData, "lifeProgress", 0);
+  const fitnessProgress = numberValue(formData, "fitnessProgress", 0);
 
   return {
     id: text(formData, "taskId") || createId("task"),
@@ -81,6 +205,14 @@ function taskDraft(formData: FormData): GrowthTask {
     theoryContent,
     operationContent,
     lifeContent,
+    theoryProgress,
+    operationProgress,
+    lifeProgress,
+    fitnessProgress,
+    theoryLinks: parseTheoryLinks(text(formData, "theoryLinksText"), theoryContent),
+    practiceProjects: parsePracticeProjects(text(formData, "practiceProjectsText"), operationContent),
+    lifeSummary: text(formData, "lifeSummary") || lifeContent,
+    fitnessPlan: text(formData, "fitnessPlan") || "待补充运动训练和健身安排。",
     progressDelta: numberValue(formData, "progressDelta", 1) || 1,
     linkedMilestoneId: text(formData, "linkedMilestoneId") || null,
     linkedProductId: text(formData, "linkedProductId") || null,

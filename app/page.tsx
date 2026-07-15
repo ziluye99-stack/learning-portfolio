@@ -5,7 +5,7 @@ import { getPublicData } from "@/lib/public-data";
 const solutionCards = [
   {
     title: "每天学了什么难复盘",
-    copy: "成长路径按年月、日期、任务和详情四层记录，后面回看时能直接找到学习内容和实战内容。"
+    copy: "成长路径按年月、日期、任务和详情四层记录，后面回看时能直接找到理论学习、实操和生活安排。"
   },
   {
     title: "实战和产品进展脱节",

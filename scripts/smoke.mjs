@@ -71,6 +71,17 @@ async function main() {
       await expectText(page, text);
     }
 
+    const calendarRoutes = [
+      ["/growth/2026-07", "31 天"],
+      ["/growth/2028-02", "29 天"],
+      ["/growth/2028-07", "31 天"]
+    ];
+
+    for (const [route, text] of calendarRoutes) {
+      await page.goto(`${baseUrl}${route}`, { waitUntil: "networkidle" });
+      await expectText(page, text);
+    }
+
     await page.goto(`${baseUrl}/learning`, { waitUntil: "networkidle" });
     await page.waitForURL("**/growth", { timeout: 8000 });
 
@@ -86,15 +97,28 @@ async function main() {
     await page.getByLabel("管理员密码").fill(process.env.SMOKE_ADMIN_PASSWORD || "Yezilu2026");
     await page.getByRole("button", { name: "登录后台" }).click();
     await page.waitForURL("**/admin", { timeout: 8000 });
+    await page.waitForLoadState("networkidle");
     await expectText(page, "内容编辑后台");
+    await page.context().addCookies([
+      {
+        name: "portfolio_admin",
+        value: "1",
+        url: baseUrl,
+        httpOnly: true,
+        sameSite: "Lax"
+      }
+    ]);
 
     await page.goto(`${baseUrl}${taskPath}`, { waitUntil: "networkidle" });
     await expectText(page, task.title);
-    await page.getByLabel("状态").selectOption("已完成");
-    await page.getByLabel("进度增量").fill(String(task.progressDelta || 1));
-    await page.getByLabel("学习内容").fill(task.learningContent || "完成任务学习内容。");
-    await page.getByLabel("实战内容").fill(task.practiceContent || "完成任务实战内容。");
-    await page.getByRole("button", { name: "保存任务" }).click();
+    const editTaskPanel = page.locator(".admin-panel").filter({ hasText: "编辑任务" });
+    await editTaskPanel.waitFor({ timeout: 8000 });
+    await editTaskPanel.getByLabel("状态").selectOption("已完成");
+    await editTaskPanel.getByLabel("进度增量").fill(String(task.progressDelta || 1));
+    await editTaskPanel.getByLabel("理论学习部分").fill(task.theoryContent || task.learningContent || "完成任务理论学习内容。");
+    await editTaskPanel.getByLabel("实操部分").fill(task.operationContent || task.practiceContent || "完成任务实操内容。");
+    await editTaskPanel.getByLabel("生活部分").fill(task.lifeContent || "完成任务生活安排。");
+    await editTaskPanel.getByRole("button", { name: "保存任务" }).click();
     await page.waitForURL(`**${taskPath}`, { timeout: 8000 });
     await expectText(page, "已同步到关联目标");
 
@@ -106,7 +130,7 @@ async function main() {
     }
 
     await page.goto(`${baseUrl}${taskPath}`, { waitUntil: "networkidle" });
-    await page.getByRole("button", { name: "保存任务" }).click();
+    await page.locator(".admin-panel").filter({ hasText: "编辑任务" }).getByRole("button", { name: "保存任务" }).click();
     await page.waitForURL(`**${taskPath}`, { timeout: 8000 });
 
     await page.goto(`${baseUrl}/product-progress`, { waitUntil: "networkidle" });

@@ -15,6 +15,9 @@ export type GrowthTask = {
   status: LearningStatus;
   learningContent: string;
   practiceContent: string;
+  theoryContent?: string;
+  operationContent?: string;
+  lifeContent?: string;
   progressDelta: number;
   linkedMilestoneId?: string | null;
   linkedProductId?: string | null;

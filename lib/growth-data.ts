@@ -2,7 +2,7 @@ import type { GrowthDay, GrowthMonth, GrowthTask } from "@/lib/types";
 import type { SharedPortfolioData } from "@/lib/shared-data";
 
 export function sortGrowthMonths(months: GrowthMonth[]) {
-  return [...months].sort((a, b) => b.yearMonth.localeCompare(a.yearMonth));
+  return [...months].sort((a, b) => a.yearMonth.localeCompare(b.yearMonth));
 }
 
 export function sortGrowthDays(days: GrowthDay[]) {
@@ -67,4 +67,16 @@ export function monthOverview(month: GrowthMonth) {
     finishedTasks: finishedTasks.length,
     publicDays: days
   };
+}
+
+export function taskTheoryContent(task: GrowthTask) {
+  return task.theoryContent || task.learningContent || "待编辑理论学习内容。";
+}
+
+export function taskOperationContent(task: GrowthTask) {
+  return task.operationContent || task.practiceContent || "待编辑实操内容。";
+}
+
+export function taskLifeContent(task: GrowthTask) {
+  return task.lifeContent || "待编辑生活安排。";
 }

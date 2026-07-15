@@ -16,7 +16,7 @@ export default async function GrowthPage() {
             <div>
               <p className="eyebrow">Growth Path</p>
               <h1>成长路径</h1>
-              <p>按年月 &rarr; 每天 &rarr; 任务 &rarr; 任务详情的方式，记录学习、实战和进度同步。</p>
+              <p>从 2026 年 7 月到 2028 年 7 月，按真实月份和天数记录理论学习、实操和生活安排。</p>
             </div>
             <Link className="button" href="/admin">
               后台编辑

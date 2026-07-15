@@ -5,6 +5,7 @@ import type {
   DailyLog,
   GrowthDay,
   GrowthMonth,
+  GrowthTask,
   Milestone,
   PortfolioStats,
   ProductProgress,
@@ -22,6 +23,8 @@ export type SharedPortfolioData = {
 };
 
 const localDataPath = path.join(process.cwd(), "data", "portfolio.json");
+const growthStartMonth = "2026-07";
+const growthEndMonth = "2028-07";
 
 function githubConfigured() {
   return Boolean(
@@ -123,18 +126,143 @@ function legacyProjectsToProducts(projects: Project[] = []): ProductProgress[] {
   }));
 }
 
+function daysInMonth(yearMonth: string) {
+  const [year, month] = yearMonth.split("-").map(Number);
+  return new Date(year, month, 0).getDate();
+}
+
+function monthRange(start: string, end: string) {
+  const [startYear, startMonth] = start.split("-").map(Number);
+  const [endYear, endMonth] = end.split("-").map(Number);
+  const months: string[] = [];
+  let year = startYear;
+  let month = startMonth;
+
+  while (year < endYear || (year === endYear && month <= endMonth)) {
+    months.push(`${year}-${String(month).padStart(2, "0")}`);
+    month += 1;
+    if (month > 12) {
+      month = 1;
+      year += 1;
+    }
+  }
+
+  return months;
+}
+
+function defaultTask(date: string): GrowthTask {
+  const day = date.slice(8, 10);
+  return {
+    id: `task-${date}-plan`,
+    title: `${Number(day)}日任务编辑规划`,
+    status: "准备中",
+    learningContent: "待编辑理论学习内容。",
+    practiceContent: "待编辑实操内容。",
+    theoryContent: "待编辑理论学习内容。",
+    operationContent: "待编辑实操内容。",
+    lifeContent: "待编辑生活安排。",
+    progressDelta: 1,
+    linkedMilestoneId: null,
+    linkedProductId: null,
+    progressApplied: false,
+    isPublic: true
+  };
+}
+
+function normalizeTask(task: GrowthTask): GrowthTask {
+  return {
+    ...task,
+    learningContent: task.learningContent || task.theoryContent || "待编辑理论学习内容。",
+    practiceContent: task.practiceContent || task.operationContent || "待编辑实操内容。",
+    theoryContent: task.theoryContent || task.learningContent || "待编辑理论学习内容。",
+    operationContent: task.operationContent || task.practiceContent || "待编辑实操内容。",
+    lifeContent: task.lifeContent || "待编辑生活安排。",
+    progressDelta: task.progressDelta || 1,
+    linkedMilestoneId: task.linkedMilestoneId || null,
+    linkedProductId: task.linkedProductId || null,
+    progressApplied: Boolean(task.progressApplied)
+  };
+}
+
+function defaultDay(yearMonth: string, day: number): GrowthDay {
+  const dayText = String(day).padStart(2, "0");
+  const date = `${yearMonth}-${dayText}`;
+  return {
+    id: `day-${date}`,
+    date,
+    day: dayText,
+    title: `${day}日任务编辑规划`,
+    summary: "按理论学习、实操、生活三部分规划当天内容。",
+    status: "准备中",
+    progress: 0,
+    tasks: [defaultTask(date)],
+    isPublic: true
+  };
+}
+
+function normalizeDay(day: GrowthDay, yearMonth: string, dayNumber: number): GrowthDay {
+  const fallback = defaultDay(yearMonth, dayNumber);
+  const tasks = (day.tasks?.length ? day.tasks : fallback.tasks).map(normalizeTask);
+
+  return {
+    ...fallback,
+    ...day,
+    date: day.date || fallback.date,
+    day: String(day.day || fallback.day).padStart(2, "0"),
+    title: day.title || fallback.title,
+    summary: day.summary || fallback.summary,
+    tasks,
+    isPublic: day.isPublic ?? true
+  };
+}
+
+function defaultMonth(yearMonth: string): GrowthMonth {
+  const [year, month] = yearMonth.split("-");
+  return {
+    id: `month-${yearMonth}`,
+    yearMonth,
+    title: `${year}年${Number(month)}月学习路径`,
+    summary: "按真实日历生成每天的任务编辑规划。",
+    goal: "编辑本月大任务或月目标。",
+    status: "准备中",
+    progress: 0,
+    days: [],
+    isPublic: true
+  };
+}
+
+function normalizeMonth(month: GrowthMonth): GrowthMonth {
+  const fallback = defaultMonth(month.yearMonth);
+  const existingDays = new Map((month.days || []).map((day) => [String(day.day || day.date.slice(8, 10)).padStart(2, "0"), day]));
+  const days = Array.from({ length: daysInMonth(month.yearMonth) }, (_, index) => {
+    const dayNumber = index + 1;
+    const key = String(dayNumber).padStart(2, "0");
+    return normalizeDay(existingDays.get(key) || defaultDay(month.yearMonth, dayNumber), month.yearMonth, dayNumber);
+  });
+
+  return {
+    ...fallback,
+    ...month,
+    title: month.title || fallback.title,
+    summary: month.summary || fallback.summary,
+    goal: month.goal || fallback.goal,
+    days,
+    isPublic: month.isPublic ?? true
+  };
+}
+
+function completeGrowthCalendar(months: GrowthMonth[]) {
+  const existingMonths = new Map(months.map((month) => [month.yearMonth, month]));
+  return monthRange(growthStartMonth, growthEndMonth).map((yearMonth) => normalizeMonth(existingMonths.get(yearMonth) || defaultMonth(yearMonth)));
+}
+
 export function normalizeSharedData(data: Partial<SharedPortfolioData> & { dailyLogs?: DailyLog[]; projects?: Project[] }): SharedPortfolioData {
-  const growthMonths = (data.growthMonths?.length ? data.growthMonths : legacyDailyLogsToGrowthMonths(data.dailyLogs)).map(
-    (month) => ({
-      ...month,
-      days: [...(month.days || [])].sort((a, b) => a.date.localeCompare(b.date))
-    })
-  );
+  const growthMonths = completeGrowthCalendar(data.growthMonths?.length ? data.growthMonths : legacyDailyLogsToGrowthMonths(data.dailyLogs));
   const products = data.products?.length ? data.products : legacyProjectsToProducts(data.projects);
 
   return {
     profile: data.profile as Profile,
-    growthMonths: [...growthMonths].sort((a, b) => b.yearMonth.localeCompare(a.yearMonth)),
+    growthMonths: [...growthMonths].sort((a, b) => a.yearMonth.localeCompare(b.yearMonth)),
     milestones: data.milestones || [],
     products: [...products],
     tutorials: data.tutorials || []

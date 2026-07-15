@@ -208,12 +208,16 @@ export function SharedAdmin({
                     <input id="task-title" name="title" placeholder="例如：重做产品宣传动画" required />
                   </div>
                   <div className="field full">
-                    <label htmlFor="learningContent">学习内容</label>
-                    <textarea id="learningContent" name="learningContent" required />
+                    <label htmlFor="theoryContent">理论学习部分</label>
+                    <textarea id="theoryContent" name="theoryContent" required />
                   </div>
                   <div className="field full">
-                    <label htmlFor="practiceContent">实战内容</label>
-                    <textarea id="practiceContent" name="practiceContent" required />
+                    <label htmlFor="operationContent">实操部分</label>
+                    <textarea id="operationContent" name="operationContent" required />
+                  </div>
+                  <div className="field full">
+                    <label htmlFor="lifeContent">生活部分</label>
+                    <textarea id="lifeContent" name="lifeContent" required />
                   </div>
                   <div className="field">
                     <label htmlFor="linkedMilestoneId">关联里程碑</label>

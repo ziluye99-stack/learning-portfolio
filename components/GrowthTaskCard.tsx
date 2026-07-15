@@ -23,7 +23,7 @@ export function GrowthTaskCard({
         <span className="status">{task.status}</span>
       </div>
       <p className="summary">
-        学习 {task.progressDelta}% · {task.linkedMilestoneId ? "关联里程碑" : "未关联里程碑"}
+        理论 / 实操 / 生活 · 进度增量 {task.progressDelta}%
       </p>
       <ProgressBar value={task.status === "已完成" ? 100 : task.status === "进行中" ? 55 : 20} />
       <div className="action-row">

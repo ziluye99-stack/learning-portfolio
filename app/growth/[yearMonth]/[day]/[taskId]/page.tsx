@@ -3,7 +3,16 @@ import { notFound } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { isAdminSession } from "@/lib/admin-session";
 import { getPublicData } from "@/lib/public-data";
-import { dayLabel, findGrowthDay, findGrowthMonth, findGrowthTask, monthLabel } from "@/lib/growth-data";
+import {
+  dayLabel,
+  findGrowthDay,
+  findGrowthMonth,
+  findGrowthTask,
+  monthLabel,
+  taskLifeContent,
+  taskOperationContent,
+  taskTheoryContent
+} from "@/lib/growth-data";
 import { ProgressBar } from "@/components/ProgressBar";
 import { upsertGrowthTaskAction } from "@/app/admin/actions";
 
@@ -55,12 +64,16 @@ export default async function GrowthTaskPage({
             <ProgressBar value={task.status === "已完成" ? 100 : task.status === "进行中" ? 60 : 25} />
             <div className="task-grid">
               <section className="task-block">
-                <p className="eyebrow">学习内容</p>
-                <p>{task.learningContent}</p>
+                <p className="eyebrow">理论学习部分</p>
+                <p>{taskTheoryContent(task)}</p>
               </section>
               <section className="task-block">
-                <p className="eyebrow">实战内容</p>
-                <p>{task.practiceContent}</p>
+                <p className="eyebrow">实操部分</p>
+                <p>{taskOperationContent(task)}</p>
+              </section>
+              <section className="task-block">
+                <p className="eyebrow">生活部分</p>
+                <p>{taskLifeContent(task)}</p>
               </section>
             </div>
           </article>
@@ -108,12 +121,16 @@ export default async function GrowthTaskPage({
                   <input id="task-edit-progressDelta" name="progressDelta" type="number" min="1" max="100" defaultValue={task.progressDelta} required />
                 </div>
                 <div className="field full">
-                  <label htmlFor="task-edit-learningContent">学习内容</label>
-                  <textarea id="task-edit-learningContent" name="learningContent" defaultValue={task.learningContent} required />
+                  <label htmlFor="task-edit-theoryContent">理论学习部分</label>
+                  <textarea id="task-edit-theoryContent" name="theoryContent" defaultValue={taskTheoryContent(task)} required />
                 </div>
                 <div className="field full">
-                  <label htmlFor="task-edit-practiceContent">实战内容</label>
-                  <textarea id="task-edit-practiceContent" name="practiceContent" defaultValue={task.practiceContent} required />
+                  <label htmlFor="task-edit-operationContent">实操部分</label>
+                  <textarea id="task-edit-operationContent" name="operationContent" defaultValue={taskOperationContent(task)} required />
+                </div>
+                <div className="field full">
+                  <label htmlFor="task-edit-lifeContent">生活部分</label>
+                  <textarea id="task-edit-lifeContent" name="lifeContent" defaultValue={taskLifeContent(task)} required />
                 </div>
                 <div className="field">
                   <label htmlFor="task-edit-linkedMilestoneId">关联里程碑</label>

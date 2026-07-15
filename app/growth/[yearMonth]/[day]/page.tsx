@@ -11,7 +11,10 @@ import {
   findGrowthMonth,
   getVisibleTasks,
   monthLabel,
-  sortGrowthTasks
+  sortGrowthTasks,
+  taskLifeContent,
+  taskOperationContent,
+  taskTheoryContent
 } from "@/lib/growth-data";
 import { upsertGrowthDayAction, upsertGrowthTaskAction } from "@/app/admin/actions";
 
@@ -38,6 +41,7 @@ export default async function GrowthDayPage({
 
   const visibleTasks = getVisibleTasks(dayItem, activeFilter);
   const totalTasks = sortGrowthTasks(dayItem.tasks.filter((item) => item.isPublic));
+  const primaryTask = totalTasks[0];
 
   return (
     <main>
@@ -62,6 +66,20 @@ export default async function GrowthDayPage({
               <strong>{dayItem.progress}%</strong>
             </div>
             <ProgressBar value={dayItem.progress} />
+            <div className="task-grid">
+              <section className="task-block">
+                <p className="eyebrow">理论学习部分</p>
+                <p>{primaryTask ? taskTheoryContent(primaryTask) : "待编辑理论学习内容。"}</p>
+              </section>
+              <section className="task-block">
+                <p className="eyebrow">实操部分</p>
+                <p>{primaryTask ? taskOperationContent(primaryTask) : "待编辑实操内容。"}</p>
+              </section>
+              <section className="task-block">
+                <p className="eyebrow">生活部分</p>
+                <p>{primaryTask ? taskLifeContent(primaryTask) : "待编辑生活安排。"}</p>
+              </section>
+            </div>
           </article>
 
           {admin ? (
@@ -130,12 +148,16 @@ export default async function GrowthDayPage({
                   <input id="task-progressDelta" name="progressDelta" type="number" min="1" max="100" defaultValue="1" required />
                 </div>
                 <div className="field full">
-                  <label htmlFor="learningContent">学习内容</label>
-                  <textarea id="learningContent" name="learningContent" required />
+                  <label htmlFor="theoryContent">理论学习部分</label>
+                  <textarea id="theoryContent" name="theoryContent" required />
                 </div>
                 <div className="field full">
-                  <label htmlFor="practiceContent">实战内容</label>
-                  <textarea id="practiceContent" name="practiceContent" required />
+                  <label htmlFor="operationContent">实操部分</label>
+                  <textarea id="operationContent" name="operationContent" required />
+                </div>
+                <div className="field full">
+                  <label htmlFor="lifeContent">生活部分</label>
+                  <textarea id="lifeContent" name="lifeContent" required />
                 </div>
                 <div className="field">
                   <label htmlFor="linkedMilestoneId">关联里程碑</label>

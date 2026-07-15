@@ -68,12 +68,19 @@ function dayDraft(formData: FormData): GrowthDay {
 }
 
 function taskDraft(formData: FormData): GrowthTask {
+  const theoryContent = text(formData, "theoryContent") || text(formData, "learningContent");
+  const operationContent = text(formData, "operationContent") || text(formData, "practiceContent");
+  const lifeContent = text(formData, "lifeContent");
+
   return {
     id: text(formData, "taskId") || createId("task"),
     title: text(formData, "title"),
     status: text(formData, "status") as LearningStatus,
-    learningContent: text(formData, "learningContent"),
-    practiceContent: text(formData, "practiceContent"),
+    learningContent: theoryContent,
+    practiceContent: operationContent,
+    theoryContent,
+    operationContent,
+    lifeContent,
     progressDelta: numberValue(formData, "progressDelta", 1) || 1,
     linkedMilestoneId: text(formData, "linkedMilestoneId") || null,
     linkedProductId: text(formData, "linkedProductId") || null,
